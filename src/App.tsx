@@ -1,10 +1,10 @@
-import React, { useCallback, useRef, useState } from "react";
-import { produce } from "immer";
+import { produce } from 'immer';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const numRows = 50;
 const numCols = 50;
 
-//neighbors postitions of a cell
+/** neighbors positions of a cell */
 const operations = [
   [0, 1],
   [1, 1],
@@ -16,8 +16,10 @@ const operations = [
   [-1, 1],
 ];
 
+type Grid = (0 | 1)[][];
+
 const generateEmptyGrid = () => {
-  const rows = [];
+  const rows: Grid = [];
   for (let i = 0; i < numRows; i++) {
     rows.push(Array.from(Array(numCols), () => 0));
   }
@@ -25,7 +27,7 @@ const generateEmptyGrid = () => {
 };
 
 const generateRandomGrid = () => {
-  const rows = [];
+  const rows: Grid = [];
   for (let i = 0; i < numRows; i++) {
     rows.push(Array.from(Array(numCols), () => (Math.random() > 0.7 ? 1 : 0)));
   }
@@ -33,11 +35,11 @@ const generateRandomGrid = () => {
 };
 
 const App: React.FC = () => {
-  const [grid, setGrid] = useState(() => {
+  const [grid, setGrid] = useState<Grid>(() => {
     return generateRandomGrid();
   });
 
-  const [running, setRunning] = useState(false);
+  const [running, setRunning] = useState(true);
 
   const runningRef = useRef(running);
   runningRef.current = running;
@@ -49,7 +51,7 @@ const App: React.FC = () => {
       return produce(g, (gridCopy) => {
         for (let i = 0; i < numRows; i++) {
           for (let k = 0; k < numRows; k++) {
-            //compute numbers of neigbors
+            //compute numbers of neighbors
             let neighbors = 0;
             operations.forEach(([x, y]) => {
               const newI = i + x;
@@ -72,36 +74,40 @@ const App: React.FC = () => {
     });
 
     setTimeout(runSimulation, 100);
-  }, []);
+  }, [running]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (isMounted && running) {
+      runSimulation();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [running]);
 
   return (
     <>
-      <div style={{ display: "flex" }}>
+      <div style={{ display: 'flex', gap: 8, paddingBlock: 8 }}>
         <button
-          onClick={() => {
-            setRunning(!running);
-            if (!running) {
-              runningRef.current = true;
-              runSimulation();
-            }
-          }}
-          style={{ backgroundColor: running ? "red" : "#8bc34a" }}
+          onClick={() => setRunning(!running)}
+          style={{ backgroundColor: running ? 'red' : '#8bc34a' }}
         >
-          {running ? "stop" : "start"}
+          {running ? 'Stop' : 'Start'}
         </button>
 
-        <button onClick={() => setGrid(generateRandomGrid())}>clear</button>
+        <button onClick={() => setGrid(generateEmptyGrid())}>Clear grid</button>
 
-        <button
-          onClick={() => {
-            setGrid(generateRandomGrid());
-          }}
-        >
-          random
+        <button onClick={() => setGrid(generateRandomGrid())}>
+          Random grid
         </button>
 
-        <span style={{ marginLeft: "auto" }}>
-          <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">
+        <span>Click on a cell to toggle it</span>
+
+        <span style={{ marginLeft: 'auto' }}>
+          <a href='https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life'>
             Rules
           </a>
         </span>
@@ -109,7 +115,7 @@ const App: React.FC = () => {
 
       <div
         style={{
-          display: "grid",
+          display: 'grid',
           gridTemplateColumns: `repeat(${numCols}, 20px)`,
         }}
       >
@@ -126,8 +132,9 @@ const App: React.FC = () => {
               style={{
                 width: 20,
                 height: 20,
-                backgroundColor: grid[x][y] ? "pink" : undefined,
-                border: "solid 1px grey",
+                backgroundColor: grid[x][y] ? 'white' : undefined,
+                border: 'solid 0.5px grey',
+                cursor: 'pointer',
               }}
             ></div>
           ))
